@@ -4,16 +4,23 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
+import androidx.lifecycle.ViewModelProviders
 import androidx.room.Room
 import com.example.mynotepad.*
+import com.example.mynotepad.db.RepoDatabase
 import com.example.mynotepad.ui.main.MainActivity
+import com.example.mynotepad.ui.main.MainViewModel
 import kotlinx.android.synthetic.main.activity_add_note.*
 
 class NoteAddActivity : AppCompatActivity() {
 
+    lateinit var mainViewModel: MainViewModel
+    private var note: DBase? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_note)
+        mainViewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
 
         val intent = intent
         val dbSonucu = intent.getParcelableExtra<DBase>("test")
@@ -25,30 +32,30 @@ class NoteAddActivity : AppCompatActivity() {
             Toast.makeText(this, dbSonucu.metin, Toast.LENGTH_LONG).show()
         }
 
-        val db: RepoDatabase = Room.databaseBuilder(this, RepoDatabase::class.java, "notes")
-            .allowMainThreadQueries()
-            .fallbackToDestructiveMigration()
-            .build()
-
         btnKaydet.setOnClickListener {
             if (notAction == NotActionType.NOT_EKLE.name) {
-                val note = DBase(0, etBaslik.text.toString(), etMetin.text.toString())
-                db.notedao().insert(note)
+                note = DBase(0, etBaslik.text.toString(), etMetin.text.toString())
                 finish()
+                overridePendingTransition(R.anim.slide_out_left, R.anim.slide_out_right)
+                mainViewModel.insertNote(note!!)
             } else if (notAction.equals(NotActionType.NOT_GUNCELLE.name)) {
-                val note = DBase(dbSonucu._id, etBaslik.text.toString(), etMetin.text.toString())
-                db.notedao().update(note)
+                note = DBase(dbSonucu._id, etBaslik.text.toString(), etMetin.text.toString())
                 finish()
+                overridePendingTransition(R.anim.slide_out_left, R.anim.slide_out_right)
+                mainViewModel.updateNote(note!!)
             }
         }
 
         btnSil.setOnClickListener {
             if (dbSonucu != null) {
-                val note = DBase(dbSonucu._id, etBaslik.text.toString(), etMetin.text.toString())
-                db.notedao().delete(note)
+                note = DBase(dbSonucu._id, etBaslik.text.toString(), etMetin.text.toString())
+                overridePendingTransition(R.anim.slide_out_left, R.anim.slide_out_right)
             } else {
-                val note = DBase(0, etBaslik.text.toString(), etMetin.text.toString())
-                db.notedao().delete(note)
+                note = DBase(0, etBaslik.text.toString(), etMetin.text.toString())
+                overridePendingTransition(R.anim.slide_out_left, R.anim.slide_out_right)
+            }
+            note?.let {
+                mainViewModel.deleteNote(it)
             }
             finish()
         }
@@ -56,6 +63,8 @@ class NoteAddActivity : AppCompatActivity() {
             val intentgeri = Intent(this, MainActivity::class.java)
             startActivity(intentgeri)
             finish()
+            overridePendingTransition(R.anim.slide_out_left, R.anim.slide_out_right)
+
         }
     }
 

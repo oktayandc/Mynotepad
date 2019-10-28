@@ -1,11 +1,13 @@
-package com.example.mynotepad
+package com.example.mynotepad.db
 
 import androidx.lifecycle.LiveData
 import androidx.room.*
+import com.example.mynotepad.DBase
 
 
 @Dao
 interface NoteDao {
+
     @Query("SELECT * FROM notlar")
     fun getAllNotlar(): LiveData<List<DBase>>
 

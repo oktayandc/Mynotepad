@@ -2,16 +2,15 @@ package com.example.mynotepad.ui.main
 
 import android.content.Intent
 import android.os.Bundle
-import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.Observer
+import androidx.lifecycle.*
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
 import com.example.mynotepad.*
+import com.example.mynotepad.R
+import com.example.mynotepad.db.RepoDatabase
 import com.example.mynotepad.ui.noteadd.NoteAddActivity
 
 import kotlinx.android.synthetic.main.activity_main.*
@@ -20,41 +19,39 @@ import kotlinx.android.synthetic.main.content_main.*
 class MainActivity : AppCompatActivity() {
 
     var notes : List<DBase>? = null
-    var db: RepoDatabase? = null
+    lateinit var mainViewModel: MainViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
-        db = Room.databaseBuilder(this,RepoDatabase::class.java,"notes")
-            .allowMainThreadQueries()
-            .fallbackToDestructiveMigration()
-            .build()
-
+        mainViewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
         observeNots()
+
         fab.setOnClickListener { view ->
             /*Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()*/
             val intent = Intent(this, NoteAddActivity::class.java)
             intent.putExtra("notAction", NotActionType.NOT_EKLE.name)
             startActivity(intent)
-            //overridePendingTransition(R.anim.fade_in,R.anim.slide_in_left)
-            overridePendingTransition(R.anim.slide_in_left,R.anim.fade_in)
+            overridePendingTransition(R.anim.slide_in_left,R.anim.slide_in_right)
 
         }
     }
 
     private fun observeNots() {
-        db?.notedao()?.getAllNotlar()?.observe(this, Observer {
-            if (it.size > 0) {
-                rvNotes.layoutManager= LinearLayoutManager(this)
-                rvNotes.adapter= NoteAdapter(it, {
-                    val intent = Intent(this,NoteAddActivity::class.java)
-                    intent.putExtra("notAction", NotActionType.NOT_GUNCELLE.name)
-                    intent.putExtra("test", it)
-                    startActivity(intent)
-                })
+        mainViewModel.getNotes().observe(this, Observer {
+            it?.let { notlar ->
+                if (notlar.size > 0) {
+                    rvNotes.layoutManager= LinearLayoutManager(this)
+                    rvNotes.adapter= NoteAdapter(notlar, {
+                        val intent = Intent(this,NoteAddActivity::class.java)
+                        intent.putExtra("notAction", NotActionType.NOT_GUNCELLE.name)
+                        intent.putExtra("test", it)
+                        startActivity(intent)
+                    })
+                }
             }
         })
     }
